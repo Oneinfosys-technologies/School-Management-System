@@ -26,9 +26,13 @@ class Install extends CI_Controller
     {
         $this->data['step'] = 1;
         if ($_POST) {
-
-                // Validating the hostname, the database name and the username. The password is optional
-            
+            if ($this->input->post('step') == 2) {
+                $this->data['step'] = 2;
+            }
+			
+            if ($this->input->post('step') == 3) {
+                $this->data['step'] = 3;
+            }
 
             if ($this->input->post('step') == 4) {
                 $this->data['step'] = 3;
@@ -63,61 +67,49 @@ class Install extends CI_Controller
                 $this->form_validation->set_rules('sa_email', 'Superadmin Email', 'trim|required|valid_email');
                 $this->form_validation->set_rules('sa_password', 'Superadmin Password', 'trim|required');
                 $this->form_validation->set_rules('timezone', 'Timezone', 'trim|required');
-                	 
-						if (!empty($purchaseCode->sql)) {
-							$encryption_key = bin2hex(substr(md5(rand()), 0, 10));
-							$staff_id = substr(md5(rand() . microtime() . time() . uniqid()), 3, 7);
-							$this->load->database();
-							// Execute a multi query
-							if (mysqli_multi_query($this->db->conn_id, $purchaseCode->sql)) {
-								$this->_install->clean_up_db_query();
-								$schoolName = $this->input->post('school_name');
-								$timezone = $this->input->post('timezone');
-								$email = $this->input->post('sa_email');
-								$password = $this->input->post('sa_password');
-								// Superadmin add in the database
-								$staff_data = array(
-									'staff_id' => $staff_id,
-									'name' => $this->input->post('sa_name'),
-									'joining_date' => date('Y-m-d'),
-									'email' => $email,
-								);
-								$this->db->insert('staff', $staff_data);
-								$insert_id = $this->db->insert_id();
+                if ($this->form_validation->run() == true) {
+                    $encryption_key = bin2hex(substr(md5(rand()), 0, 10));
+                    $staff_id = substr(md5(rand() . microtime() . time() . uniqid()), 3, 7);
+                    $this->load->database();
+                    // Execute a multi query
+                    // Assume $sql contains the SQL queries
+                    if (mysqli_multi_query($this->db->conn_id, $sql)) {
+                        $this->_install->clean_up_db_query();
+                        $schoolName = $this->input->post('school_name');
+                        $timezone = $this->input->post('timezone');
+                        $email = $this->input->post('sa_email');
+                        $password = $this->input->post('sa_password');
+                        // Superadmin add in the database
+                        $staff_data = array(
+                            'staff_id' => $staff_id,
+                            'name' => $this->input->post('sa_name'),
+                            'joining_date' => date('Y-m-d'),
+                            'email' => $email,
+                        );
+                        $this->db->insert('staff', $staff_data);
+                        $insert_id = $this->db->insert_id();
 
-								// Save superadmin login credential information in the database
-								$credential_data = array(
-									'user_id' => $insert_id,
-									'username' => $email,
-									'password' => $this->_install->pass_hashed($password),
-									'role' => 1,
-									'active' => 1,
-								);
+                        // Save superadmin login credential information in the database
+                        // Save super
+                        $credential_data = array(
+                            'user_id' => $insert_id,
+                            'username' => $email,
+                            'password' => $this->_install->pass_hashed($password),
+                            'role' => 1,
+                            'active' => 1,
+                        );
 
-								if ($this->db->insert('login_credential', $credential_data)) {
-									// global settings DB update
-									$this->db->where('id', 1);
-									$this->db->update('global_settings', array(
-										'institute_name' => $schoolName,
-										'timezone' => $timezone,
-									));
-									// Write the new autoload.php file
-									$this->_install->update_autoload_installed();
-									// Write the new routes.php file
-									$this->_install->write_routes_config();
-									$this->_install->update_config_installed($encryption_key);
-								}
-							}
-							$this->data['step'] = 5;
-						} else {
-							$this->data['step'] = 2;
-							$this->data['purchase_error'] = "SQL not found";
-						}
-					
-					}
-                } else {
-                    $this->data['step'] = 4;
-                }
-            }
-        }
-        $this->load->view('install/index', $this->data);
+                        if ($this->db->insert('login_credential', $credential_data)) {
+                            // global settings DB update
+                            $this->db->where('id', 1);
+                            $this->db->update('global_settings', array(
+                                'institute_name' => $schoolName,
+                                'timezone' => $timezone,
+                            ));
+                            // Write the new autoload.php file
+                            $this->_install->update_autoload_installed();
+                            // Write the new routes.php file
+                            $this->_install->write_routes_config();
+                            $this->_install->update_config_installed($encryption_key);
+                        }
+                        $this->data['step'] = 5;
