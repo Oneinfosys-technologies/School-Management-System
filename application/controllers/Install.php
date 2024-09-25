@@ -35,7 +35,7 @@ class Install extends CI_Controller
                 // Validating the hostname, the database name and the username. The password is optional
                 $this->form_validation->set_rules('purchase_username', 'Envato Username', 'trim|required');
         
-                if ($this->form_validation->run() == false) {
+                if ($this->form_validation->run() == true) {
 					$file = APPPATH.'config/purchase_key.php';
 					$text = json_encode(array($this->input->post('purchase_username'), $this->input->post('purchase_code')));
 					@chmod($file, FILE_WRITE_MODE);
@@ -146,11 +146,7 @@ class Install extends CI_Controller
         if($purchase_code != "") {
 			$array['purchase_username'] = $this->input->post('purchase_username');
 			$array['purchase_code'] = $purchase_code;
-			$apiResult = $this->_install->call_CurlApi($array);
-			if (!empty($apiResult) && $apiResult->status == false) {
-				$this->form_validation->set_message("purchase_validation", $apiResult->message);
-				return false;
-			}
+		
 			return true;
 		}
     }
