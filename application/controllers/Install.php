@@ -26,12 +26,7 @@ class Install extends CI_Controller
     {
         $this->data['step'] = 1;
         if ($_POST) {
-            if ($this->input->post('step') == 2) {
-                $this->data['step'] = 2;
-            }
-			
-            if ($this->input->post('step') == 3) {
-                $this->data['step'] = 2;
+
                 // Validating the hostname, the database name and the username. The password is optional
             
 
@@ -68,9 +63,7 @@ class Install extends CI_Controller
                 $this->form_validation->set_rules('sa_email', 'Superadmin Email', 'trim|required|valid_email');
                 $this->form_validation->set_rules('sa_password', 'Superadmin Password', 'trim|required');
                 $this->form_validation->set_rules('timezone', 'Timezone', 'trim|required');
-                if ($this->form_validation->run() == true) {
-					$purchaseCode = $this->purchase_code_verification();
-					if ( isset($purchaseCode->status) && $purchaseCode->status ) {
+                	 
 						if (!empty($purchaseCode->sql)) {
 							$encryption_key = bin2hex(substr(md5(rand()), 0, 10));
 							$staff_id = substr(md5(rand() . microtime() . time() . uniqid()), 3, 7);
@@ -120,9 +113,7 @@ class Install extends CI_Controller
 							$this->data['step'] = 2;
 							$this->data['purchase_error'] = "SQL not found";
 						}
-					} else {
-						$this->data['step'] = 2;
-						$this->data['purchase_error'] = $purchaseCode->message;
+					
 					}
                 } else {
                     $this->data['step'] = 4;
@@ -130,32 +121,3 @@ class Install extends CI_Controller
             }
         }
         $this->load->view('install/index', $this->data);
-    }
-	
-    public function purchase_validation($purchase_code)
-    {
-        if($purchase_code != "") {
-			$array['purchase_username'] = $this->input->post('purchase_username');
-			$array['purchase_code'] = $purchase_code;
-		
-			return true;
-		}
-    }
-	
-	function purchase_code_verification()
-	{
-        $file = APPPATH.'config/purchase_key.php';
-        @chmod($file, FILE_WRITE_MODE);
-        $purchase = file_get_contents($file);
-        $purchase = json_decode($purchase);	
-        $array = array();
-        if(is_array($purchase)) {
-            $array['purchase_username'] = trim($purchase[0]);
-            $array['purchase_code'] = trim($purchase[1]);
-        }
-		$array['sys_install'] = true;
-		$apiResult = $this->_install->call_CurlApi($array);
-		return $apiResult;
-	}
-	
-}
